@@ -1,67 +1,50 @@
-import os, sys, configparser, datetime
+import shutil, time, zipfile, os, datetime
 
-now = datetime.datetime.now()
-args = sys.argv
+vault = {
+  'vaults': [
+    {
+      'name': 'TempVault',
+      'root': './TempVault',
+      'main_io': 'Main IO',
+      'working_dir': 'Working',
+      'backup_dir': 'Backups',
+      'snapshot_dir': 'Snapshots',
+      'restore_point_dir': 'Restore Points'
+    }
+  ],
+  'current': 0
+}
 
-if (os.path.exists('log/')):
-    logFile = open("log/"+now.strftime("%Y %m %d %H %M %S")+".log", "a")
-else:
-    os.mkdir('log')
-    logFile = open("log/"+now.strftime("%Y %m %d %H %M %S")+".log", "a")
+# Source and destination directories
+src_dir = vault['vaults'][vault['current']]['root']+'/'+vault['vaults'][vault['current']]['main_io']
+dst_dir = vault['vaults'][vault['current']]['root']+'/'+vault['vaults'][vault['current']]['working_dir']+'/Files'
 
-def die(error = False, message = "Unknown error!"):
-    logFile.close()
-    if error == True:
-        sys.exit(message)
+# Interval in seconds between each copy
+# interval = 60 * 60  # 1 hour
+interval = 10
 
-def log(message, level = 0):
-    now = datetime.datetime.now()
+while True:
+  now = datetime.datetime.now()
+  try:
+    # Copy all files and directories from source to destination
+    shutil.rmtree(dst_dir)
+    shutil.copytree(src_dir, dst_dir)
+    print(f'Copied contents of {src_dir} to {dst_dir}')
+    with zipfile.ZipFile(vault['vaults'][vault['current']]['root']+'/'+vault['vaults'][vault['current']]['working_dir']+'/temp.backup', 'w') as f:
+      for root, dirs, files in os.walk(dst_dir):
+        for dir in dirs:
+          f.write(os.path.join(root, dir), os.path.join(root, dir).split(vault['vaults'][vault['current']]['root']+'/'+vault['vaults'][vault['current']]['working_dir']+'/Files')[1])
+        for file in files:
+          f.write(os.path.join(root, file), os.path.join(root, file).split(vault['vaults'][vault['current']]['root']+'/'+vault['vaults'][vault['current']]['working_dir']+'/Files')[1])
+        f.close()
     
-    if (level == 0):
-        logFile.write('['+now.strftime("%H:%M:%S")+'] '+config['LOGGING']['0']+': '+message+'\n')
-        print('['+now.strftime("%H:%M:%S")+'] '+config['LOGGING']['0']+': '+message)
-    elif (level == 1):
-        logFile.write('['+now.strftime("%H:%M:%S")+'] '+config['LOGGING']['1']+': '+message+'\n')
-        print('['+now.strftime("%H:%M:%S")+'] '+config['LOGGING']['1']+': '+message)
-    elif (level == 2):
-        logFile.write('['+now.strftime("%H:%M:%S")+'] '+config['LOGGING']['2']+': '+message+'\n')
-        print('['+now.strftime("%H:%M:%S")+'] '+config['LOGGING']['2']+': '+message)
-    elif (level == 3):
-        logFile.write('['+now.strftime("%H:%M:%S")+'] '+config['LOGGING']['3']+': '+message+'\n')
-        print('['+now.strftime("%H:%M:%S")+'] '+config['LOGGING']['3']+': '+message)
-    elif (level == 4):
-        logFile.write('['+now.strftime("%H:%M:%S")+'] '+config['LOGGING']['4']+': '+message+'\n')
-        die(True, '['+now.strftime("%H:%M:%S")+'] '+config['LOGGING']['4']+': '+message)
-    else:
-        die(True, 'Invalid level!')
+    shutil.copy(vault['vaults'][vault['current']]['root']+'/'+vault['vaults'][vault['current']]['working_dir']+'/temp.backup', vault['vaults'][vault['current']]['root']+'/'+vault['vaults'][vault['current']]['backup_dir']+now.strftime("/%Y\%m\%d %H:%M:%S.backup"))
+    os.remove(vault['vaults'][vault['current']]['root']+'/'+vault['vaults'][vault['current']]['working_dir']+'/temp.backup')
 
-if (os.path.exists("config.ini")):
-    config = configparser.ConfigParser()
-    config.sections()
-    config.read('config.ini')
-else:
-    file = open("config.ini", "a")
-    file.write("[LOGGING]\n")
-    file.write("0=LOG\n")
-    file.write("1=INFO\n")
-    file.write("2=WARN\n")
-    file.write("3=ERROR\n")
-    file.write("4=FATAL ERROR\n\n")
-    file.write("[VAULT]\n")
-    file.write("location=\n")
-    file.write("duplicate=yes\n")
-    file.write("duplicates=3\n\n")
-    file.close()
-    config = configparser.ConfigParser()
-    config.sections()
-    config.read('config.ini')
-    log('No config file found!', 2)
+    print('Created backup of the current vault')
+  except Exception as e:
+    print(f'Error while copying: {e}')
 
-def TUI():
-    print
-
-if (len(args) == 3):
-    print(str(args[1]))
-    print(str(args[2]))
-
-die()
+  # Wait for the interval before copying again
+  time.sleep(interval)
+str.split()
