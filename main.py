@@ -47,4 +47,3 @@ while True:
 
   # Wait for the interval before copying again
   time.sleep(interval)
-str.split()
