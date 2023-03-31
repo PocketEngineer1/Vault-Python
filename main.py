@@ -10,11 +10,21 @@ class vault:
       {
         'name': 'TempVault',
         'root': './TempVault',
-        'main_io': 'Main IO',
-        'working_dir': 'Working',
-        'backup_dir': 'Backups',
-        'snapshot_dir': 'Snapshots',
-        'restore_point_dir': 'Restore Points'
+        'file_ext': {
+          'backup': 'backup',
+          'snapshot': 'snapshot',
+          'restore_point': 'restore'
+        },
+        'dirs':{
+          'main_io': 'Main IO',
+          'backup': 'Backups',
+          'snapshot': 'Snapshots',
+          'restore_point': 'Restore Points',
+          'working': {
+            'root': 'Working',
+            'files': 'Files'
+          }
+        }
       }
     ],
     'active_vaults': [0]
@@ -22,8 +32,8 @@ class vault:
 
   def backup(vault_number: int):
     # Source and destination directories
-    src_dir = vault.data['vaults'][vault_number]['root']+'/'+vault.data['vaults'][vault_number]['main_io']
-    dst_dir = vault.data['vaults'][vault_number]['root']+'/'+vault.data['vaults'][vault_number]['working_dir']+'/Files'
+    src_dir = vault.data['vaults'][vault_number]['root']+'/'+vault.data['vaults'][vault_number]['dirs']['main_io']
+    dst_dir = vault.data['vaults'][vault_number]['root']+'/'+vault.data['vaults'][vault_number]['dirs']['working']['root']+'/'+vault.data['vaults'][vault_number]['dirs']['working']['files']
 
     now = datetime.datetime.now()
     try:
@@ -31,16 +41,16 @@ class vault:
       shutil.rmtree(dst_dir)
       shutil.copytree(src_dir, dst_dir)
       print(f'Copied contents of {src_dir} to {dst_dir}')
-      with zipfile.ZipFile(vault.data['vaults'][vault_number]['root']+'/'+vault.data['vaults'][vault_number]['working_dir']+'/temp.backup', 'w') as f:
+      with zipfile.ZipFile(vault.data['vaults'][vault_number]['root']+'/'+vault.data['vaults'][vault_number]['dirs']['working']['root']+'/temp.backup', 'w') as f:
         for root, dirs, files in os.walk(dst_dir):
           for dir in dirs:
-            f.write(os.path.join(root, dir), os.path.join(root, dir).split(vault.data['vaults'][vault_number]['root']+'/'+vault.data['vaults'][vault_number]['working_dir']+'/Files')[1])
+            f.write(os.path.join(root, dir), os.path.join(root, dir).split(vault.data['vaults'][vault_number]['root']+'/'+vault.data['vaults'][vault_number]['dirs']['working']['root']+'/Files')[1])
           for file in files:
-            f.write(os.path.join(root, file), os.path.join(root, file).split(vault.data['vaults'][vault_number]['root']+'/'+vault.data['vaults'][vault_number]['working_dir']+'/Files')[1])
+            f.write(os.path.join(root, file), os.path.join(root, file).split(vault.data['vaults'][vault_number]['root']+'/'+vault.data['vaults'][vault_number]['dirs']['working']['root']+'/Files')[1])
           f.close()
       
-      shutil.copy(vault.data['vaults'][vault_number]['root']+'/'+vault.data['vaults'][vault_number]['working_dir']+'/temp.backup', vault.data['vaults'][vault_number]['root']+'/'+vault.data['vaults'][vault_number]['backup_dir']+now.strftime("/%Y %m %d %H %M %S.backup"))
-      os.remove(vault.data['vaults'][vault_number]['root']+'/'+vault.data['vaults'][vault_number]['working_dir']+'/temp.backup')
+      shutil.copy(vault.data['vaults'][vault_number]['root']+'/'+vault.data['vaults'][vault_number]['dirs']['working']['root']+'/temp.'+vault.data['vaults'][vault_number]['file_ext']['backup'], vault.data['vaults'][vault_number]['root']+'/'+vault.data['vaults'][vault_number]['dirs']['backup']+now.strftime("/%Y %m %d %H %M %S.")+vault.data['vaults'][vault_number]['file_ext']['backup'])
+      os.remove(vault.data['vaults'][vault_number]['root']+'/'+vault.data['vaults'][vault_number]['dirs']['working']['root']+'/temp.'+vault.data['vaults'][vault_number]['file_ext']['backup'])
       temp = vault.data['vaults'][vault_number]['name']
       print(f'Created backup of the files in the vault \'{temp}\'')
       del temp
