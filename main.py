@@ -1,10 +1,11 @@
-import shutil, time, zipfile, os, datetime, PySimpleGUI, sys, asyncio
+import shutil, time, zipfile, os, datetime, PySimpleGUI as sg, sys, threading
 
 # Interval in seconds between each copy
 # interval = 60 * 60  # 1 hour
 interval = 10
 
 class vault:
+  handler_kill_switch = False
   data = {
     'vaults': [
       {
@@ -30,7 +31,7 @@ class vault:
     'active_vaults': [0]
   }
 
-  async def backup(vault_number: int):
+  def backup(vault_number: int):
     # Source and destination directories
     src_dir = vault.data['vaults'][vault_number]['root']+'/'+vault.data['vaults'][vault_number]['dirs']['main_io']
     dst_dir = vault.data['vaults'][vault_number]['root']+'/'+vault.data['vaults'][vault_number]['dirs']['working']['root']+'/'+vault.data['vaults'][vault_number]['dirs']['working']['files']
@@ -57,33 +58,51 @@ class vault:
     except Exception as e:
       print(f'Error while copying: {e}')
   
-  async def handler():
+  def handler():
     while True:
+      if vault.handler_kill_switch:
+        break
       for i in vault.data['active_vaults']:
-        await vault.backup(i)
+        vault.backup(i)
 
       # Wait for the interval before copying again
       time.sleep(interval)
+      pass
 
-  async def gui():
+  def gui():
     global window
-    PySimpleGUI.theme('DefaultNoMoreNagging')   # Add a touch of color
+    sg.theme('DefaultNoMoreNagging')   # Add a touch of color
     # All the stuff inside your window.
     layout = [
-      [PySimpleGUI.Text()]
+      [sg.Text('Select a directory:')],
+      [sg.Input(key='-FOLDER-'), sg.FolderBrowse()],
+      [sg.Button('List Directory')],
+      [sg.Listbox(values=[], size=(40, 10), key='-FILE LIST-')],
+      [sg.Button('Exit')]
     ]
 
     # Create the Window
-    window = PySimpleGUI.Window(f'Vault [Python {sys.version_info[0]}.{sys.version_info[1]}.{sys.version_info[2]}] [PySimpleGUI {PySimpleGUI.__version__}]', layout)
+    window = sg.Window(f'Vault [Python {sys.version_info[0]}.{sys.version_info[1]}.{sys.version_info[2]}] [PySimpleGUI {sg.__version__}]', layout)
     # Event Loop to process "events" and get the "values" of the inputs
     while True:
       event, values = window.read()
-      if event == PySimpleGUI.WIN_CLOSED or event == 'Cancel': # if user closes window or clicks cancel
+      if event == sg.WIN_CLOSED or event == 'Cancel' or event == 'Exit': # if user closes window or clicks cancel
+        vault.handler_kill_switch = True
         break
-      print(values)
+      if event == 'List Directory':
+        folder_path = values['-FOLDER-']
+        if os.path.isdir(folder_path):
+          file_list = os.listdir(folder_path)
+          window['-FILE LIST-'].update(file_list)
+        else:
+          sg.popup(f"The path '{folder_path}' is not a directory.")
 
-async def main(): await asyncio.gather(vault.handler(), vault.gui())
-
-asyncio.run(main())
-
-window.close()
+if __name__ == '__main__':
+  while_thread = threading.Thread(target=vault.handler)
+  tkinter_thread = threading.Thread(target=vault.gui)
+    
+  while_thread.start()
+  tkinter_thread.start()
+    
+  while_thread.join()
+  tkinter_thread.join()
