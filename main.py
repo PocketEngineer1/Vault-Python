@@ -1,6 +1,9 @@
 import shutil, time, zipfile, os, datetime, PySimpleGUI as sg, sys, threading
 
 class vault:
+  def __init__(self) -> None:
+    pass
+
   handler_kill_switch = False
   # Interval in seconds between each copy
   # interval = 60 * 60  # 1 hour
@@ -79,39 +82,59 @@ class vault:
     theme = 'DefaultNoMoreNagging'
     layouts = {
       'Main': [
+        [sg.Text('!', expand_x=True), sg.Text('Placeholder'), sg.Text('!', expand_x=True, justification='right')],
+        [sg.Button('File Browser')]
+      ],
+      'File Browser': [
         [sg.Text('Select a directory:')],
         [sg.Input(key='-FOLDER-'), sg.FolderBrowse()],
         [sg.Button('List Directory')],
         [sg.Listbox(values=[], size=(40, 10), key='-FILE LIST-')],
       ],
+      'Configure': {
+        'Window': [
+          []
+        ]
+      }
     }
 
     def handler():
       print("Vault GUI started!")
-      global window
+      sg.theme(vault.GUI.theme)
 
-      # Create the Window
-      window = sg.Window(f'Vault [Python {sys.version_info[0]}.{sys.version_info[1]}.{sys.version_info[2]}] [PySimpleGUI {sg.__version__}]', vault.GUI.layouts['Main'])
-      # Event Loop to process "events" and get the "values" of the inputs
-      while True:
-        event, values = window.read()
-        if event == sg.WIN_CLOSED:
-          vault.handler_kill_switch = True
-          break
-        if event == 'List Directory':
-          folder_path = values['-FOLDER-']
-          if os.path.isdir(folder_path):
-            file_list = os.listdir(folder_path)
-            window['-FILE LIST-'].update(file_list)
-          else:
-            sg.popup(f"The path '{folder_path}' is not a directory.", title="That's not a directory!")
+      vault.GUI.Windows.Main(vault.GUI.layouts['Main'])
+        
+        # # Layouts
+        # if event == 'File Browser':
+        #   file_browser_window = sg.Window(f'File Browser - Vault [Python {sys.version_info[0]}.{sys.version_info[1]}.{sys.version_info[2]}] [PySimpleGUI {sg.__version__}]', vault.GUI.layouts['File Browser'])
+        #   while True:
+        #     file_browser_event, file_browser_values = file_browser_window.read()
+        #     if file_browser_event == sg.WIN_CLOSED:
+        #       vault.handler_kill_switch = True
+        #       break
+        #     if file_browser_event == 'List Directory':
+        #       folder_path = file_browser_values['-FOLDER-']
+        #       if os.path.isdir(folder_path):
+        #         file_list = os.listdir(folder_path)
+        #         file_browser_window['-FILE LIST-'].update(file_list)
+        #       else:
+        #         sg.popup(f"The path '{folder_path}' is not a directory.", title="That's not a directory!")
+    
+    class Windows:
+      def Main(layout):
+        window = sg.Window(f'Vault [Python {sys.version_info[0]}.{sys.version_info[1]}.{sys.version_info[2]}] [PySimpleGUI {sg.__version__}]', layout)
+        while True:
+          event, values = window.read()
+          if event == sg.WIN_CLOSED:
+            vault.handler_kill_switch = True
+            break
 
 if __name__ == '__main__':
   vault_handler_thread = threading.Thread(target=vault.handler)
   vault_gui_thread = threading.Thread(target=vault.GUI.handler)
     
-  vault_handler_thread.start()
+  # vault_handler_thread.start()
   vault_gui_thread.start()
     
-  vault_handler_thread.join()
+  # vault_handler_thread.join()
   vault_gui_thread.join()
