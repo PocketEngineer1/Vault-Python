@@ -4,5 +4,6 @@ vault:
 	mkdir Vault/Backups
 	mkdir Vault/Working
 	mkdir Vault/Working/Files
-	# mkdir Vault/Snapshots
-	# mkdir 'Vault/Restore Points'
+	mkdir Vault/Snapshots
+	mkdir 'Vault/Restore Points'
+	touch Vault/vault.json

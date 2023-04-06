@@ -1,4 +1,5 @@
-import shutil, time, zipfile, os, datetime, PySimpleGUI as sg, sys, threading
+import shutil, time, zipfile, os, datetime, sys, threading, pygame
+from UI_Framework import *
 
 class vault:
   handler_kill_switch = False
@@ -58,7 +59,6 @@ class vault:
       except Exception as e:
         temp = vault.data['vaults'][vault_number]['name']
         print(f'An error ocurred with the vault named \"{temp}\"\n{e}')
-        sg.popup(f'An error ocurred with the vault named \"{temp}\"\n{e}', title="An error occurred!")
   
   def handler():
     print("Vault handler started!")
@@ -71,54 +71,23 @@ class vault:
         i = i - 1
         vault.backup(i)
 
-      # Wait for the interval before copying again
+      # Wait for the interval before starting again
       time.sleep(vault.interval)
       pass
 
   class GUI:
-    theme = 'DefaultNoMoreNagging'
+    title = f'Vault [Python {sys.version_info[0]}.{sys.version_info[1]}.{sys.version_info[2]}] [PyGame {pygame.__version__}]'
 
     def handler():
+      print("Vault GUI starting...")
+      def unnamed_function():
+        print('')
+      ui = UI((800, 600), 'My UI')
+      button = Button((100, 100), (200, 50), (255, 0, 0), 'Click me!', click_handler=unnamed_function)
+      ui.add_button(button)
       print("Vault GUI started!")
-      sg.theme(vault.GUI.theme)
-
-      vault.GUI.Windows.Main()
-    
-    class Windows:
-      def Main():
-        layout = [
-          [sg.Text('!', expand_x=True), sg.Text('Placeholder'), sg.Text('!', expand_x=True, justification='right')],
-          [sg.Button('File Browser')]
-        ]
-        window = sg.Window(f'Vault [Python {sys.version_info[0]}.{sys.version_info[1]}.{sys.version_info[2]}] [PySimpleGUI {sg.__version__}]', layout)
-        while True:
-          event, values = window.read()
-          if event == sg.WIN_CLOSED:
-            vault.handler_kill_switch = True
-            break
-          if event == 'File Browser':
-            vault.GUI.Windows.FileBrowser()
+      ui.run()
       
-      def FileBrowser():
-        layout = [
-          [sg.Text('Select a directory:')],
-          [sg.Input(key='-FOLDER-'), sg.FolderBrowse()],
-          [sg.Button('List Directory')],
-          [sg.Listbox(values=[], size=(40, 10), key='-FILE LIST-')],
-        ]
-        window = sg.Window(f'Vault [Python {sys.version_info[0]}.{sys.version_info[1]}.{sys.version_info[2]}] [PySimpleGUI {sg.__version__}]', layout)
-        while True:
-          event, values = window.read()
-          if event == sg.WIN_CLOSED:
-            vault.handler_kill_switch = True
-            break
-          if event == 'List Directory':
-            folder_path = values['-FOLDER-']
-            if os.path.isdir(folder_path):
-              file_list = os.listdir(folder_path)
-              window['-FILE LIST-'].update(file_list)
-            else:
-              sg.popup(f"The path '{folder_path}' is not a directory.", title="That's not a directory!")
 
 if __name__ == '__main__':
   vault_handler_thread = threading.Thread(target=vault.handler)
