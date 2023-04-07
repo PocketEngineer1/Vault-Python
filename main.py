@@ -2,7 +2,7 @@ import shutil, time, zipfile, os, datetime, sys, threading, pygame
 from UI_Framework import *
 
 class vault:
-  handler_kill_switch = False
+  handler_active = False
   # Interval in seconds between each copy
   # interval = 60 * 60  # 1 hour
   interval = 10
@@ -62,10 +62,7 @@ class vault:
   
   def handler():
     print("Vault handler started!")
-    while True:
-      if vault.handler_kill_switch:
-        break
-
+    while vault.handler_active:
       i = len(vault.data['vaults'])
       while i > 0:
         i = i - 1
@@ -82,7 +79,7 @@ class vault:
       print("Vault GUI starting...")
       def unnamed_function():
         print('')
-      ui = UI((800, 600), 'My UI')
+      ui = UI((800, 600), vault.GUI.title)
       button = Button((100, 100), (200, 50), (255, 0, 0), 'Click me!', click_handler=unnamed_function)
       ui.add_button(button)
       print("Vault GUI started!")
